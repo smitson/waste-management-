@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Waste Management System</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1 class="header__title">🗂️ Waste Management System</h1>
+            <nav class="header__nav">
+                <button class="nav-btn" onclick="showSection('dashboard')">Dashboard</button>
+                <button class="nav-btn" onclick="showSection('collections')">Collections</button>
+                <button class="nav-btn" onclick="showSection('locations')">Locations</button>
+                <button class="nav-btn" onclick="showSection('analytics')">Analytics</button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <!-- Dashboard Section -->
+            <section id="dashboard" class="section section--active">
+                <h2 class="section__title">Dashboard</h2>
+                <div class="dashboard-grid">
+                    <div class="card">
+                        <h3>Total Collections</h3>
+                        <div class="metric" id="total-collections">0</div>
+                    </div>
+                    <div class="card">
+                        <h3>Pending</h3>
+                        <div class="metric" id="pending-collections">0</div>
+                    </div>
+                    <div class="card">
+                        <h3>Completed</h3>
+                        <div class="metric" id="completed-collections">0</div>
+                    </div>
+                    <div class="card">
+                        <h3>Total Locations</h3>
+                        <div class="metric" id="total-locations">0</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Collections Section -->
+            <section id="collections" class="section">
+                <div class="section__header">
+                    <h2 class="section__title">Waste Collections</h2>
+                    <button class="btn btn--primary" onclick="showAddCollectionForm()">Add Collection</button>
+                </div>
+                
+                <div id="add-collection-form" class="form-container" style="display: none;">
+                    <form class="form" onsubmit="addCollection(event)">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="location">Location</label>
+                                <input type="text" id="location" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="waste-type">Waste Type</label>
+                                <select id="waste-type" required>
+                                    <option value="">Select type</option>
+                                    <option value="organic">Organic</option>
+                                    <option value="plastic">Plastic</option>
+                                    <option value="paper">Paper</option>
+                                    <option value="metal">Metal</option>
+                                    <option value="glass">Glass</option>
+                                    <option value="electronic">Electronic</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="quantity">Quantity</label>
+                                <input type="number" id="quantity" step="0.1" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="unit">Unit</label>
+                                <select id="unit" required>
+                                    <option value="">Select unit</option>
+                                    <option value="kg">Kilograms</option>
+                                    <option value="tons">Tons</option>
+                                    <option value="liters">Liters</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn--primary">Add Collection</button>
+                            <button type="button" class="btn btn--secondary" onclick="hideAddCollectionForm()">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="collections-list" id="collections-list">
+                    <!-- Collections will be populated here -->
+                </div>
+            </section>
+
+            <!-- Locations Section -->
+            <section id="locations" class="section">
+                <div class="section__header">
+                    <h2 class="section__title">Locations</h2>
+                    <button class="btn btn--primary" onclick="showAddLocationForm()">Add Location</button>
+                </div>
+
+                <div id="add-location-form" class="form-container" style="display: none;">
+                    <form class="form" onsubmit="addLocation(event)">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="location-name">Name</label>
+                                <input type="text" id="location-name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="location-address">Address</label>
+                                <input type="text" id="location-address" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="latitude">Latitude</label>
+                                <input type="number" id="latitude" step="0.000001" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="longitude">Longitude</label>
+                                <input type="number" id="longitude" step="0.000001" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="zone">Zone</label>
+                                <input type="text" id="zone" required>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn--primary">Add Location</button>
+                            <button type="button" class="btn btn--secondary" onclick="hideAddLocationForm()">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="locations-list" id="locations-list">
+                    <!-- Locations will be populated here -->
+                </div>
+            </section>
+
+            <!-- Analytics Section -->
+            <section id="analytics" class="section">
+                <h2 class="section__title">Analytics</h2>
+                <div class="analytics-grid">
+                    <div class="card">
+                        <h3>Waste by Type</h3>
+                        <div id="waste-by-type">
+                            <!-- Chart will be populated here -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 Waste Management System. Built with modern web technologies.</p>
+        </div>
+    </footer>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

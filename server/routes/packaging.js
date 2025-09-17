@@ -1,3 +1,68 @@
+// Compare multiple packaging items side-by-side (cost, carbon, material, EPR, PPT)
+router.post('/compare', (req, res) => {
+  const { packagingIds } = req.body;
+  if (!packagingIds || !Array.isArray(packagingIds) || packagingIds.length < 2) {
+    return res.status(400).json({ error: 'Please provide at least 2 packaging IDs for comparison' });
+  }
+
+  const placeholders = packagingIds.map(() => '?').join(',');
+  const sql = `
+    SELECT pi.*, mt.name as material_name, mt.category, mt.recyclable, mt.biodegradable
+    FROM packaging_items pi
+    JOIN material_types mt ON pi.material_type_id = mt.id
+    WHERE pi.id IN (${placeholders})
+  `;
+
+  db.all(sql, packagingIds, (err, items) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    if (items.length < 2) {
+      return res.status(400).json({ error: 'Not enough valid packaging items found for comparison' });
+    }
+
+    // Example: EPR and PPT rates (could be dynamic/configurable)
+    const EPR_RATE = 0.15; // £/kg (example)
+    const PPT_RATE = 0.20; // £/kg (example)
+    const CO2_PER_KG = 2.5; // kg CO2 per kg packaging (example)
+
+    const comparison = items.map(item => {
+      const weight = parseFloat(item.weight) || 0.1;
+      const cost = parseFloat(item.cost) || 0; // Add 'cost' to schema if not present
+      const epr_cost = weight * EPR_RATE;
+      const ppt_cost = weight * PPT_RATE;
+      const carbon_emissions = weight * CO2_PER_KG;
+      return {
+        id: item.id,
+        product_name: item.product_name,
+        manufacturer: item.manufacturer,
+        material: item.material_name,
+        category: item.category,
+        recyclable: !!item.recyclable,
+        biodegradable: !!item.biodegradable,
+        weight_kg: weight,
+        cost_gbp: cost,
+        epr_cost_gbp: epr_cost,
+        ppt_cost_gbp: ppt_cost,
+        carbon_emissions_kg: carbon_emissions
+      };
+    });
+
+    res.json({
+      success: true,
+      data: {
+        comparison,
+        summary: {
+          total_items: comparison.length,
+          total_cost_gbp: comparison.reduce((sum, i) => sum + i.cost_gbp, 0),
+          total_epr_gbp: comparison.reduce((sum, i) => sum + i.epr_cost_gbp, 0),
+          total_ppt_gbp: comparison.reduce((sum, i) => sum + i.ppt_cost_gbp, 0),
+          total_carbon_kg: comparison.reduce((sum, i) => sum + i.carbon_emissions_kg, 0)
+        }
+      }
+    });
+  });
+});
 const express = require('express');
 const router = express.Router();
 const { v4: uuidv4 } = require('uuid');

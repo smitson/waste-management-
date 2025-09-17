@@ -54,9 +54,9 @@ location_id_counter = 1
 async def read_root():
     """Serve the main frontend page"""
     try:
-        with open("frontend/index.html", "r") as f:
+        with open("frontend/index.html", "r", encoding="utf-8") as f:
             html_content = f.read()
-        return HTMLResponse(content=html_content)
+            return HTMLResponse(content=html_content)
     except FileNotFoundError:
         return HTMLResponse(content="<h1>Waste Management System</h1><p>Frontend not found. Please ensure frontend files are in place.</p>")
 

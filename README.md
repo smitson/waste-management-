@@ -45,65 +45,103 @@ A comprehensive, cloud-ready waste management system built with modern web techn
 
 ### Prerequisites
 - Python 3.11+
+- [uv](https://github.com/astral-sh/uv) (fast Python package manager)
 - Docker and Docker Compose (for containerized deployment)
 - PostgreSQL (for production database)
 
-### Local Development
+### Local Development (with uv)
+
 
 1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd waste-management-
-   ```
 
-2. **Set up Python virtual environment**
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
+  ```bash
+  git clone <repository-url>
+  cd waste-management-
+  ```
 
-3. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
 
-4. **Set up environment variables**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your configuration
-   ```
+2. **Install uv (if not already installed)**
 
-5. **Run the application**
-   ```bash
-   python -m uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8000
-   ```
+  ```bash
+  pip install uv
+  # or
+  python -m pip install uv
+  ```
+
+
+3. **Create and activate a virtual environment with uv**
+
+  ```bash
+  uv venv .venv
+  uv venv --activate
+  # On Windows PowerShell:
+  .venv\Scripts\Activate.ps1
+  ```
+
+
+4. **Install dependencies**
+
+  ```bash
+  uv pip install -r requirements.txt
+  ```
+
+
+5. **Set up environment variables**
+
+  ```bash
+  cp .env.example .env
+  # Edit .env with your configuration
+  ```
+
+
+6. **Run the application**
+
+  ```bash
+  uv pip install -r requirements.txt  # Ensure all deps are installed
+  .venv\Scripts\python -m uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8000
+  ```
+
 
 6. **Access the application**
-   - Frontend: http://localhost:8000
-   - API Documentation: http://localhost:8000/docs
-   - Health Check: http://localhost:8000/health
+
+  - Frontend: http://localhost:8000
+  - API Documentation: http://localhost:8000/docs
+  - Health Check: http://localhost:8000/health
 
 ### Docker Deployment
 
+
 1. **Build and run with Docker Compose**
-   ```bash
-   docker-compose up --build
-   ```
+
+  ```bash
+  docker-compose up --build
+  ```
+
 
 2. **Access the application**
-   - Application: http://localhost
-   - Database: localhost:5432
+
+  - Application: http://localhost
+  - Database: localhost:5432
 
 ## 🧪 Testing
 
-### Run Backend Tests
+### Run Backend Tests (with uv)
 ```bash
-# Install test dependencies (included in requirements.txt)
+uv pip install pytest
+uv pip install -r requirements.txt  # Ensure all deps are installed
 pytest backend/tests/ -v
 
 # With coverage
 pytest backend/tests/ --cov=backend --cov-report=html
 ```
+## ⚡ Using uv for Python
+
+This project uses [uv](https://github.com/astral-sh/uv) for Python dependency management and virtual environments. `uv` is a fast, modern Python package manager and venv tool.
+
+- Use `uv pip` instead of `pip` for all package management commands.
+- Use `uv venv` to create and manage virtual environments.
+- For more, see the [uv documentation](https://github.com/astral-sh/uv#usage).
+
 
 ### Test Coverage
 The test suite includes:

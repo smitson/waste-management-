@@ -1,3 +1,59 @@
+// Detailed packaging report for selected packaging items
+router.post('/packaging-detail', (req, res) => {
+  const { packagingIds, format = 'json' } = req.body;
+  if (!packagingIds || !Array.isArray(packagingIds) || packagingIds.length === 0) {
+    return res.status(400).json({ error: 'packagingIds array is required' });
+  }
+  const placeholders = packagingIds.map(() => '?').join(',');
+  const sql = `
+    SELECT pi.*, mt.name as material_name, mt.category, mt.recyclable, mt.biodegradable
+    FROM packaging_items pi
+    JOIN material_types mt ON pi.material_type_id = mt.id
+    WHERE pi.id IN (${placeholders})
+  `;
+  db.all(sql, packagingIds, (err, items) => {
+    if (err) return res.status(500).json({ error: err.message });
+    // Example rates (should be configurable in real app)
+    const EPR_RATE = 0.15, PPT_RATE = 0.20, CO2_PER_KG = 2.5;
+    const reportRows = items.map(item => {
+      const weight = parseFloat(item.weight) || 0.1;
+      const cost = parseFloat(item.cost) || 0;
+      const epr_cost = weight * EPR_RATE;
+      const ppt_cost = weight * PPT_RATE;
+      const carbon_emissions = weight * CO2_PER_KG;
+      return {
+        id: item.id,
+        product_name: item.product_name,
+        manufacturer: item.manufacturer,
+        material: item.material_name,
+        category: item.category,
+        recyclable: !!item.recyclable,
+        biodegradable: !!item.biodegradable,
+        weight_kg: weight,
+        cost_gbp: cost,
+        epr_cost_gbp: epr_cost,
+        ppt_cost_gbp: ppt_cost,
+        carbon_emissions_kg: carbon_emissions,
+        status: item.status,
+        created_at: item.created_at
+      };
+    });
+    if (format === 'csv') {
+      const csv = [
+        'ID,Product,Material,Category,Weight (kg),Cost (£),EPR (£),PPT (£),CO2 (kg),Recyclable,Biodegradable,Status,Created At',
+        ...reportRows.map(r => [
+          r.id, r.product_name, r.material, r.category, r.weight_kg, r.cost_gbp, r.epr_cost_gbp, r.ppt_cost_gbp, r.carbon_emissions_kg,
+          r.recyclable ? 'Yes' : 'No', r.biodegradable ? 'Yes' : 'No', r.status, r.created_at
+        ].join(','))
+      ].join('\n');
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename=packaging_detail_report.csv');
+      res.send(csv);
+    } else {
+      res.json({ success: true, data: reportRows });
+    }
+  });
+});
 const express = require('express');
 const router = express.Router();
 const db = require('../config/database');

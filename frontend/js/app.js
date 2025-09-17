@@ -1,4 +1,6 @@
 // Modern JavaScript for Waste Management System
+import { renderBarChart } from './chart.js';
+
 class WasteManagementApp {
     constructor() {
         this.baseURL = window.location.origin;
@@ -10,10 +12,138 @@ class WasteManagementApp {
         this.init();
     }
 
+
     async init() {
         this.bindEvents();
         await this.loadData();
         this.updateDashboard();
+        this.initPackagingComparison();
+        this.initPackagingReportDownload();
+    }
+    initPackagingReportDownload() {
+        const btn = document.getElementById('download-packaging-report');
+        if (!btn) return;
+        btn.addEventListener('click', async () => {
+            const idsInput = document.getElementById('packaging-ids').value.trim();
+            if (!idsInput) {
+                this.showError('Enter packaging IDs to download a report.');
+                return;
+            }
+            const ids = idsInput.split(',').map(s => s.trim()).filter(Boolean);
+            if (ids.length === 0) {
+                this.showError('Enter at least one packaging ID.');
+                return;
+            }
+            btn.disabled = true;
+            btn.textContent = 'Downloading...';
+            try {
+                const response = await fetch(`${this.baseURL}/api/reports/packaging-detail`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ packagingIds: ids, format: 'csv' })
+                });
+                if (!response.ok) throw new Error('Failed to download report');
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'packaging_detail_report.csv';
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => {
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                }, 100);
+            } catch (err) {
+                this.showError(err.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Download Report (CSV)';
+            }
+        });
+    }
+    initPackagingComparison() {
+        const form = document.getElementById('compare-packaging-form');
+        if (!form) return;
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const idsInput = document.getElementById('packaging-ids').value.trim();
+            if (!idsInput) return;
+            const ids = idsInput.split(',').map(s => s.trim()).filter(Boolean);
+            if (ids.length < 2) {
+                this.showError('Please enter at least 2 packaging IDs.');
+                return;
+            }
+            await this.comparePackaging(ids);
+        });
+    }
+
+    async comparePackaging(ids) {
+        const resultsDiv = document.getElementById('packaging-comparison-results');
+        const chartCanvas = document.getElementById('packaging-comparison-chart');
+        resultsDiv.innerHTML = 'Comparing...';
+        if (window._packagingChart) {
+            window._packagingChart.destroy();
+        }
+        try {
+            const response = await fetch(`${this.baseURL}/api/packaging/compare`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ packagingIds: ids })
+            });
+            const data = await response.json();
+            if (!data.success) throw new Error(data.error || 'Comparison failed');
+            const { comparison, summary } = data.data;
+            // Render table
+            resultsDiv.innerHTML = this.renderPackagingComparisonTable(comparison, summary);
+            // Render chart
+            const labels = comparison.map(i => i.product_name || i.id);
+            const costData = comparison.map(i => i.cost_gbp);
+            const carbonData = comparison.map(i => i.carbon_emissions_kg);
+            const eprData = comparison.map(i => i.epr_cost_gbp);
+            const pptData = comparison.map(i => i.ppt_cost_gbp);
+            window._packagingChart = renderBarChart(
+                chartCanvas.getContext('2d'),
+                labels,
+                [
+                    { label: 'Cost (£)', data: costData, backgroundColor: '#2563eb' },
+                    { label: 'CO₂ (kg)', data: carbonData, backgroundColor: '#10b981' },
+                    { label: 'EPR (£)', data: eprData, backgroundColor: '#f59e0b' },
+                    { label: 'PPT (£)', data: pptData, backgroundColor: '#ef4444' }
+                ],
+                { plugins: { title: { display: true, text: 'Packaging Comparison' } } }
+            );
+        } catch (err) {
+            resultsDiv.innerHTML = `<div class="notification notification--error">${err.message}</div>`;
+        }
+    }
+
+    renderPackagingComparisonTable(comparison, summary) {
+        if (!comparison || comparison.length === 0) return '<p>No data to compare.</p>';
+        let html = `<table class="comparison-table"><thead><tr>
+            <th>Product</th><th>Material</th><th>Weight (kg)</th><th>Cost (£)</th><th>EPR (£)</th><th>PPT (£)</th><th>CO₂ (kg)</th>
+        </tr></thead><tbody>`;
+        for (const item of comparison) {
+            html += `<tr>
+                <td>${item.product_name || item.id}</td>
+                <td>${item.material}</td>
+                <td>${item.weight_kg}</td>
+                <td>${item.cost_gbp}</td>
+                <td>${item.epr_cost_gbp}</td>
+                <td>${item.ppt_cost_gbp}</td>
+                <td>${item.carbon_emissions_kg}</td>
+            </tr>`;
+        }
+        html += `</tbody></table>`;
+        if (summary) {
+            html += `<div class="comparison-summary">
+                <strong>Total Cost:</strong> £${summary.total_cost_gbp.toFixed(2)} | 
+                <strong>Total EPR:</strong> £${summary.total_epr_gbp.toFixed(2)} | 
+                <strong>Total PPT:</strong> £${summary.total_ppt_gbp.toFixed(2)} | 
+                <strong>Total CO₂:</strong> ${summary.total_carbon_kg.toFixed(2)} kg
+            </div>`;
+        }
+        return html;
     }
 
     bindEvents() {

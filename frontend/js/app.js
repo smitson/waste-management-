@@ -355,21 +355,29 @@ class WasteManagementApp {
     }
 
     showAddCollectionForm() {
-        document.getElementById('add-collection-form').style.display = 'block';
+    document.getElementById('add-collection-form').style.display = 'block';
+    const overlay = document.getElementById('modal-overlay');
+    if (overlay) overlay.style.display = 'block';
     }
 
     hideAddCollectionForm() {
-        document.getElementById('add-collection-form').style.display = 'none';
-        this.resetCollectionForm();
+    document.getElementById('add-collection-form').style.display = 'none';
+    this.resetCollectionForm();
+    const overlay = document.getElementById('modal-overlay');
+    if (overlay) overlay.style.display = 'none';
     }
 
     showAddLocationForm() {
-        document.getElementById('add-location-form').style.display = 'block';
+    document.getElementById('add-location-form').style.display = 'block';
+    const overlay = document.getElementById('modal-overlay');
+    if (overlay) overlay.style.display = 'block';
     }
 
     hideAddLocationForm() {
-        document.getElementById('add-location-form').style.display = 'none';
-        this.resetLocationForm();
+    document.getElementById('add-location-form').style.display = 'none';
+    this.resetLocationForm();
+    const overlay = document.getElementById('modal-overlay');
+    if (overlay) overlay.style.display = 'none';
     }
 
     resetCollectionForm() {

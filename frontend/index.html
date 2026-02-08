@@ -3,176 +3,483 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Waste Management System</title>
+    <title>UK Waste Management & Compliance System</title>
     <link rel="stylesheet" href="/static/css/styles.css">
 </head>
 <body>
     <div id="modal-overlay" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.4);z-index:1040;"></div>
-    <header class="header">
-        <div class="container">
-            <h1 class="header__title">🗂️ Waste Management System</h1>
-            <nav class="header__nav">
-                <button class="nav-btn" onclick="showSection('dashboard')">Dashboard</button>
-                <button class="nav-btn" onclick="showSection('collections')">Collections</button>
-                <button class="nav-btn" onclick="showSection('locations')">Locations</button>
-                <button class="nav-btn" onclick="showSection('analytics')">Analytics</button>
-                <button class="nav-btn" onclick="showSection('packaging-comparison')">Packaging Comparison</button>
-            <!-- Packaging Comparison Section -->
-            <section id="packaging-comparison" class="section">
-                <h2 class="section__title">Packaging Comparison</h2>
-                <form id="compare-packaging-form" class="form" style="margin-bottom: 1.5rem;">
-                    <label for="packaging-ids">Enter Packaging IDs (comma separated):</label>
-                    <input type="text" id="packaging-ids" placeholder="e.g. 123,456,789" style="width: 300px;">
-                    <button type="submit" class="btn btn--primary">Compare</button>
-                    <button type="button" id="download-packaging-report" class="btn btn--secondary" style="margin-left: 1rem;">Download Report (CSV)</button>
+
+    <!-- Auth Panel (shown when not logged in) -->
+    <div id="auth-panel" class="auth-panel">
+        <div class="auth-container">
+            <h1>UK Waste Management & Compliance</h1>
+            <p class="auth-subtitle">Multi-tenant packaging compliance platform</p>
+
+            <div id="login-form" class="auth-form">
+                <h2>Sign In</h2>
+                <form onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label for="login-email">Email</label>
+                        <input type="email" id="login-email" required placeholder="you@company.co.uk">
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Password</label>
+                        <input type="password" id="login-password" required placeholder="Min 8 characters">
+                    </div>
+                    <button type="submit" class="btn btn--primary btn--full">Sign In</button>
                 </form>
-                <div id="packaging-comparison-results"></div>
-                <canvas id="packaging-comparison-chart" style="max-width: 700px; margin-top: 2rem;"></canvas>
-            </section>
-            </nav>
+                <p class="auth-toggle">No account? <a href="#" onclick="showRegisterForm()">Register your organisation</a></p>
+            </div>
+
+            <div id="register-form" class="auth-form" style="display:none;">
+                <h2>Register Organisation</h2>
+                <form onsubmit="handleRegister(event)">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="reg-org-name">Organisation Name *</label>
+                            <input type="text" id="reg-org-name" required placeholder="Acme Packaging Ltd">
+                        </div>
+                        <div class="form-group">
+                            <label for="reg-industry">Industry</label>
+                            <select id="reg-industry">
+                                <option value="">Select industry</option>
+                                <option value="food_beverage">Food & Beverage</option>
+                                <option value="cosmetics">Cosmetics & Personal Care</option>
+                                <option value="ecommerce">E-commerce & Retail</option>
+                                <option value="manufacturing">Manufacturing</option>
+                                <option value="pharmaceutical">Pharmaceutical</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="reg-email">Admin Email *</label>
+                            <input type="email" id="reg-email" required placeholder="admin@company.co.uk">
+                        </div>
+                        <div class="form-group">
+                            <label for="reg-password">Password *</label>
+                            <input type="password" id="reg-password" required minlength="8" placeholder="Min 8 characters">
+                        </div>
+                        <div class="form-group">
+                            <label for="reg-first-name">First Name</label>
+                            <input type="text" id="reg-first-name" placeholder="Jane">
+                        </div>
+                        <div class="form-group">
+                            <label for="reg-last-name">Last Name</label>
+                            <input type="text" id="reg-last-name" placeholder="Smith">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn--primary btn--full">Create Organisation</button>
+                </form>
+                <p class="auth-toggle">Already registered? <a href="#" onclick="showLoginForm()">Sign in</a></p>
+            </div>
         </div>
-    </header>
+    </div>
 
-    <main class="main">
-        <div class="container">
-            <!-- Dashboard Section -->
-            <section id="dashboard" class="section section--active">
-                <h2 class="section__title">Dashboard</h2>
-                <div class="dashboard-grid">
-                    <div class="card">
-                        <h3>Total Collections</h3>
-                        <div class="metric" id="total-collections">0</div>
-                    </div>
-                    <div class="card">
-                        <h3>Pending</h3>
-                        <div class="metric" id="pending-collections">0</div>
-                    </div>
-                    <div class="card">
-                        <h3>Completed</h3>
-                        <div class="metric" id="completed-collections">0</div>
-                    </div>
-                    <div class="card">
-                        <h3>Total Locations</h3>
-                        <div class="metric" id="total-locations">0</div>
-                    </div>
+    <!-- Main App (shown when logged in) -->
+    <div id="main-app" style="display:none;">
+        <header class="header">
+            <div class="container">
+                <h1 class="header__title">UK Waste Management & Compliance</h1>
+                <div class="header__user">
+                    <span id="user-org-name"></span>
+                    <span id="user-display-name"></span>
+                    <span id="user-role" class="role-badge"></span>
+                    <button class="btn btn--sm btn--secondary" onclick="handleLogout()">Logout</button>
                 </div>
-            </section>
+            </div>
+            <div class="container">
+                <nav class="header__nav">
+                    <button class="nav-btn active" onclick="showSection('dashboard')">Dashboard</button>
+                    <button class="nav-btn" onclick="showSection('collections')">Collections</button>
+                    <button class="nav-btn" onclick="showSection('locations')">Locations</button>
+                    <button class="nav-btn" onclick="showSection('analytics')">Analytics</button>
+                    <button class="nav-btn" onclick="showSection('compliance')">Compliance</button>
+                    <button class="nav-btn" onclick="showSection('bulk-import')">Bulk Import</button>
+                    <button class="nav-btn" onclick="showSection('packaging-comparison')">Comparison</button>
+                    <button class="nav-btn" onclick="showSection('settings')">Settings</button>
+                </nav>
+            </div>
+        </header>
 
-            <!-- Collections Section -->
-            <section id="collections" class="section">
-                <div class="section__header">
-                    <h2 class="section__title">Waste Collections</h2>
-                    <button class="btn btn--primary" onclick="showAddCollectionForm()">Add Collection</button>
-                </div>
-                
-                <div id="add-collection-form" class="form-container" style="display: none;">
-                    <form class="form" onsubmit="addCollection(event)">
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label for="location">Location</label>
-                                <input type="text" id="location" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="waste-type">Waste Type</label>
-                                <select id="waste-type" required>
-                                    <option value="">Select type</option>
-                                    <option value="organic">Organic</option>
-                                    <option value="plastic">Plastic</option>
-                                    <option value="paper">Paper</option>
-                                    <option value="metal">Metal</option>
-                                    <option value="glass">Glass</option>
-                                    <option value="electronic">Electronic</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="quantity">Quantity</label>
-                                <input type="number" id="quantity" step="0.1" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="unit">Unit</label>
-                                <select id="unit" required>
-                                    <option value="">Select unit</option>
-                                    <option value="kg">Kilograms</option>
-                                    <option value="tons">Tons</option>
-                                    <option value="liters">Liters</option>
-                                </select>
-                            </div>
+        <main class="main">
+            <div class="container">
+                <!-- Dashboard Section -->
+                <section id="dashboard" class="section section--active">
+                    <h2 class="section__title">Organisation Dashboard</h2>
+                    <div id="alert-banner"></div>
+                    <div class="dashboard-grid">
+                        <div class="card">
+                            <h3>Total Packaging Items</h3>
+                            <div class="metric" id="total-collections">0</div>
                         </div>
-                        <div class="form-actions">
-                            <button type="submit" class="btn btn--primary">Add Collection</button>
-                            <button type="button" class="btn btn--secondary" onclick="hideAddCollectionForm()">Cancel</button>
+                        <div class="card">
+                            <h3>Active Items</h3>
+                            <div class="metric" id="pending-collections">0</div>
                         </div>
+                        <div class="card">
+                            <h3>Reuse Cycles</h3>
+                            <div class="metric" id="completed-collections">0</div>
+                        </div>
+                        <div class="card">
+                            <h3>Compliance Alerts</h3>
+                            <div class="metric" id="total-locations">0</div>
+                        </div>
+                    </div>
+                    <div class="dashboard-grid" style="margin-top: 1.5rem;">
+                        <div class="card card--wide">
+                            <h3>Upcoming Compliance Deadlines</h3>
+                            <div id="upcoming-deadlines"><p>Loading...</p></div>
+                        </div>
+                        <div class="card card--wide">
+                            <h3>Compliance Status</h3>
+                            <div id="compliance-summary"><p>Loading...</p></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Collections Section -->
+                <section id="collections" class="section">
+                    <div class="section__header">
+                        <h2 class="section__title">Waste Collections</h2>
+                        <button class="btn btn--primary" onclick="showAddCollectionForm()">Add Collection</button>
+                    </div>
+
+                    <div id="add-collection-form" class="form-container" style="display: none;">
+                        <form class="form" onsubmit="addCollection(event)">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="location">Location</label>
+                                    <input type="text" id="location" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="waste-type">Waste Type</label>
+                                    <select id="waste-type" required>
+                                        <option value="">Select type</option>
+                                        <option value="organic">Organic</option>
+                                        <option value="plastic">Plastic</option>
+                                        <option value="paper">Paper</option>
+                                        <option value="metal">Metal</option>
+                                        <option value="glass">Glass</option>
+                                        <option value="electronic">Electronic</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="quantity">Quantity</label>
+                                    <input type="number" id="quantity" step="0.1" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="unit">Unit</label>
+                                    <select id="unit" required>
+                                        <option value="">Select unit</option>
+                                        <option value="kg">Kilograms</option>
+                                        <option value="tons">Tons</option>
+                                        <option value="liters">Liters</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn--primary">Add Collection</button>
+                                <button type="button" class="btn btn--secondary" onclick="hideAddCollectionForm()">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="collections-list" id="collections-list"></div>
+                </section>
+
+                <!-- Locations Section -->
+                <section id="locations" class="section">
+                    <div class="section__header">
+                        <h2 class="section__title">Locations</h2>
+                        <button class="btn btn--primary" onclick="showAddLocationForm()">Add Location</button>
+                    </div>
+
+                    <div id="add-location-form" class="form-container" style="display: none;">
+                        <form class="form" onsubmit="addLocation(event)">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="location-name">Name</label>
+                                    <input type="text" id="location-name" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="location-address">Address</label>
+                                    <input type="text" id="location-address" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="latitude">Latitude</label>
+                                    <input type="number" id="latitude" step="0.000001" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="longitude">Longitude</label>
+                                    <input type="number" id="longitude" step="0.000001" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="zone">Zone</label>
+                                    <input type="text" id="zone" required>
+                                </div>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn--primary">Add Location</button>
+                                <button type="button" class="btn btn--secondary" onclick="hideAddLocationForm()">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="locations-list" id="locations-list"></div>
+                </section>
+
+                <!-- Analytics Section -->
+                <section id="analytics" class="section">
+                    <h2 class="section__title">Analytics</h2>
+                    <div class="analytics-grid">
+                        <div class="card">
+                            <h3>Waste by Type</h3>
+                            <div id="waste-by-type"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Compliance Section -->
+                <section id="compliance" class="section">
+                    <h2 class="section__title">Compliance Management</h2>
+
+                    <div class="compliance-actions" style="margin-bottom: 1.5rem;">
+                        <button class="btn btn--primary" onclick="runComplianceCheck()">Run Compliance Check</button>
+                        <button class="btn btn--secondary" onclick="loadEPRReport()">Generate EPR Report</button>
+                        <button class="btn btn--secondary" onclick="downloadEPRCSV()">Download EPR CSV</button>
+                    </div>
+
+                    <div class="tabs">
+                        <button class="tab-btn active" onclick="showComplianceTab('alerts')">Alerts</button>
+                        <button class="tab-btn" onclick="showComplianceTab('calendar')">Calendar</button>
+                        <button class="tab-btn" onclick="showComplianceTab('epr-report')">EPR Report</button>
+                        <button class="tab-btn" onclick="showComplianceTab('schedules')">Schedules</button>
+                    </div>
+
+                    <div id="compliance-alerts-tab" class="tab-content active">
+                        <div id="alerts-list"><p>Click "Run Compliance Check" or loading alerts...</p></div>
+                    </div>
+
+                    <div id="compliance-calendar-tab" class="tab-content" style="display:none;">
+                        <div class="section__header">
+                            <h3>Compliance Deadlines</h3>
+                            <button class="btn btn--primary btn--sm" onclick="showAddDeadlineForm()">Add Deadline</button>
+                        </div>
+                        <div id="add-deadline-form" style="display:none; margin: 1rem 0;">
+                            <form class="form" onsubmit="addDeadline(event)">
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label for="deadline-title">Title</label>
+                                        <input type="text" id="deadline-title" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="deadline-date">Deadline Date</label>
+                                        <input type="date" id="deadline-date" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="deadline-regulation">Regulation Type</label>
+                                        <select id="deadline-regulation">
+                                            <option value="EPR">EPR</option>
+                                            <option value="PPT">Plastic Packaging Tax</option>
+                                            <option value="PRN">PRN/PERN</option>
+                                            <option value="WasteRegulations">Waste Regulations</option>
+                                            <option value="WasteCarrier">Waste Carrier</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="deadline-description">Description</label>
+                                        <input type="text" id="deadline-description">
+                                    </div>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn btn--primary btn--sm">Add</button>
+                                    <button type="button" class="btn btn--secondary btn--sm" onclick="document.getElementById('add-deadline-form').style.display='none'">Cancel</button>
+                                </div>
+                            </form>
+                        </div>
+                        <div id="calendar-content"><p>Loading calendar...</p></div>
+                    </div>
+
+                    <div id="compliance-epr-report-tab" class="tab-content" style="display:none;">
+                        <div id="epr-report-content"><p>Click "Generate EPR Report" to view.</p></div>
+                    </div>
+
+                    <div id="compliance-schedules-tab" class="tab-content" style="display:none;">
+                        <div id="schedules-content"><p>Loading schedules...</p></div>
+                    </div>
+                </section>
+
+                <!-- Bulk Import Section -->
+                <section id="bulk-import" class="section">
+                    <h2 class="section__title">Bulk Import</h2>
+                    <p>Import packaging items from a CSV file. Download the template first to ensure correct format.</p>
+
+                    <div class="import-actions" style="margin: 1.5rem 0;">
+                        <a href="/api/import/template" class="btn btn--secondary">Download CSV Template</a>
+                    </div>
+
+                    <div class="card" style="margin-bottom: 1.5rem;">
+                        <h3>Upload CSV File</h3>
+                        <form id="import-form" onsubmit="handleBulkImport(event)">
+                            <div class="form-group">
+                                <label for="csv-file">Select CSV File (max 10MB)</label>
+                                <input type="file" id="csv-file" accept=".csv" required>
+                            </div>
+                            <div class="form-actions">
+                                <button type="button" class="btn btn--secondary" onclick="handleValidateCSV()">Validate Only</button>
+                                <button type="submit" class="btn btn--primary">Import Data</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div id="import-results"></div>
+
+                    <div class="card" style="margin-top: 1.5rem;">
+                        <h3>Import History</h3>
+                        <div id="import-history"><p>Loading...</p></div>
+                    </div>
+                </section>
+
+                <!-- Packaging Comparison Section -->
+                <section id="packaging-comparison" class="section">
+                    <h2 class="section__title">Packaging Comparison</h2>
+                    <form id="compare-packaging-form" class="form" style="margin-bottom: 1.5rem;">
+                        <label for="packaging-ids">Enter Packaging IDs (comma separated):</label>
+                        <input type="text" id="packaging-ids" placeholder="e.g. 123,456,789" style="width: 300px;">
+                        <button type="submit" class="btn btn--primary">Compare</button>
+                        <button type="button" id="download-packaging-report" class="btn btn--secondary" style="margin-left: 1rem;">Download Report (CSV)</button>
                     </form>
-                </div>
+                    <div id="packaging-comparison-results"></div>
+                    <canvas id="packaging-comparison-chart" style="max-width: 700px; margin-top: 2rem;"></canvas>
+                </section>
 
-                <div class="collections-list" id="collections-list">
-                    <!-- Collections will be populated here -->
-                </div>
-            </section>
+                <!-- Settings Section -->
+                <section id="settings" class="section">
+                    <h2 class="section__title">Organisation Settings</h2>
 
-            <!-- Locations Section -->
-            <section id="locations" class="section">
-                <div class="section__header">
-                    <h2 class="section__title">Locations</h2>
-                    <button class="btn btn--primary" onclick="showAddLocationForm()">Add Location</button>
-                </div>
-
-                <div id="add-location-form" class="form-container" style="display: none;">
-                    <form class="form" onsubmit="addLocation(event)">
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label for="location-name">Name</label>
-                                <input type="text" id="location-name" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="location-address">Address</label>
-                                <input type="text" id="location-address" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="latitude">Latitude</label>
-                                <input type="number" id="latitude" step="0.000001" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="longitude">Longitude</label>
-                                <input type="number" id="longitude" step="0.000001" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="zone">Zone</label>
-                                <input type="text" id="zone" required>
-                            </div>
-                        </div>
-                        <div class="form-actions">
-                            <button type="submit" class="btn btn--primary">Add Location</button>
-                            <button type="button" class="btn btn--secondary" onclick="hideAddLocationForm()">Cancel</button>
-                        </div>
-                    </form>
-                </div>
-
-                <div class="locations-list" id="locations-list">
-                    <!-- Locations will be populated here -->
-                </div>
-            </section>
-
-            <!-- Analytics Section -->
-            <section id="analytics" class="section">
-                <h2 class="section__title">Analytics</h2>
-                <div class="analytics-grid">
-                    <div class="card">
-                        <h3>Waste by Type</h3>
-                        <div id="waste-by-type">
-                            <!-- Chart will be populated here -->
-                        </div>
+                    <div class="tabs">
+                        <button class="tab-btn active" onclick="showSettingsTab('org-info')">Organisation</button>
+                        <button class="tab-btn" onclick="showSettingsTab('users')">Users</button>
+                        <button class="tab-btn" onclick="showSettingsTab('api-keys')">API Keys</button>
+                        <button class="tab-btn" onclick="showSettingsTab('webhooks')">Webhooks</button>
                     </div>
-                </div>
-            </section>
-        </div>
-    </main>
 
-    <footer class="footer">
-        <div class="container">
-            <p>&copy; 2024 Waste Management System. Built with modern web technologies.</p>
-        </div>
-    </footer>
+                    <div id="settings-org-info-tab" class="tab-content active">
+                        <div id="org-details"><p>Loading...</p></div>
+                    </div>
+
+                    <div id="settings-users-tab" class="tab-content" style="display:none;">
+                        <div class="section__header">
+                            <h3>Team Members</h3>
+                            <button class="btn btn--primary btn--sm" onclick="showAddUserForm()">Add User</button>
+                        </div>
+                        <div id="add-user-form" style="display:none; margin: 1rem 0;">
+                            <form class="form" onsubmit="addUser(event)">
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label for="new-user-email">Email</label>
+                                        <input type="email" id="new-user-email" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="new-user-password">Password</label>
+                                        <input type="password" id="new-user-password" required minlength="8">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="new-user-first">First Name</label>
+                                        <input type="text" id="new-user-first">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="new-user-last">Last Name</label>
+                                        <input type="text" id="new-user-last">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="new-user-role">Role</label>
+                                        <select id="new-user-role">
+                                            <option value="operator">Operator</option>
+                                            <option value="auditor">Auditor</option>
+                                            <option value="readonly">Read-only</option>
+                                            <option value="admin">Admin</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn btn--primary btn--sm">Add User</button>
+                                    <button type="button" class="btn btn--secondary btn--sm" onclick="document.getElementById('add-user-form').style.display='none'">Cancel</button>
+                                </div>
+                            </form>
+                        </div>
+                        <div id="users-list"><p>Loading...</p></div>
+                    </div>
+
+                    <div id="settings-api-keys-tab" class="tab-content" style="display:none;">
+                        <div class="section__header">
+                            <h3>API Keys</h3>
+                            <button class="btn btn--primary btn--sm" onclick="showAddApiKeyForm()">Create API Key</button>
+                        </div>
+                        <div id="add-api-key-form" style="display:none; margin: 1rem 0;">
+                            <form class="form" onsubmit="createApiKey(event)">
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label for="api-key-name">Key Name</label>
+                                        <input type="text" id="api-key-name" required placeholder="e.g. ERP Integration">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="api-key-permissions">Permissions</label>
+                                        <select id="api-key-permissions" multiple>
+                                            <option value="read" selected>Read</option>
+                                            <option value="write">Write</option>
+                                            <option value="admin">Admin</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn btn--primary btn--sm">Create Key</button>
+                                    <button type="button" class="btn btn--secondary btn--sm" onclick="document.getElementById('add-api-key-form').style.display='none'">Cancel</button>
+                                </div>
+                            </form>
+                        </div>
+                        <div id="api-keys-list"><p>Loading...</p></div>
+                    </div>
+
+                    <div id="settings-webhooks-tab" class="tab-content" style="display:none;">
+                        <div class="section__header">
+                            <h3>Webhooks</h3>
+                            <button class="btn btn--primary btn--sm" onclick="showAddWebhookForm()">Add Webhook</button>
+                        </div>
+                        <div id="add-webhook-form" style="display:none; margin: 1rem 0;">
+                            <form class="form" onsubmit="addWebhook(event)">
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label for="webhook-name">Name</label>
+                                        <input type="text" id="webhook-name" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="webhook-url">URL</label>
+                                        <input type="url" id="webhook-url" required placeholder="https://your-app.com/webhook">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="webhook-secret">Secret (optional)</label>
+                                        <input type="text" id="webhook-secret">
+                                    </div>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn btn--primary btn--sm">Create</button>
+                                    <button type="button" class="btn btn--secondary btn--sm" onclick="document.getElementById('add-webhook-form').style.display='none'">Cancel</button>
+                                </div>
+                            </form>
+                        </div>
+                        <div id="webhooks-list"><p>Loading...</p></div>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <div class="container">
+                <p>&copy; 2024 UK Waste Management & Compliance System v2.0. Multi-tenant SaaS platform.</p>
+            </div>
+        </footer>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script type="module" src="/static/js/app.js"></script>
